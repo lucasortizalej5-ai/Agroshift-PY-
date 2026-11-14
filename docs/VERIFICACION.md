@@ -31,7 +31,7 @@ Estos son resúmenes de un período pasado, no un pronóstico ni mediciones de s
 - No se realizó validación agronómica en campo ni pruebas con agricultores.
 - No se completó una revisión visual interactiva en navegador en este entorno.
 - El Dockerfile está preparado con usuario sin privilegios y propietario correcto de los archivos. Una primera imagen compiló; la prueba de arranque detectó permisos de archivos copiados, que se corrigieron con `COPY --chown`. La recompilación final se interrumpió por falta de espacio en el entorno Docker. **El contenedor final y su prueba de persistencia con volumen quedan pendientes de ejecutar en un entorno con espacio suficiente.** Esto no afecta a las verificaciones locales de SSR, API, SQLite y NASA ya aprobadas.
-- No se desplegó el servicio Cloud Run ni se subió código a un repositorio GitHub. La conexión GitHub devolvió cero repositorios accesibles al intentar identificarlos.
+- No se desplegó el servicio Cloud Run. El repositorio GitHub fue identificado posteriormente como `lucasortizalej5-ai/Agroshift-PY-`, se confirmó el permiso de escritura y se inspeccionó su estado vacío para integrar el MVP.
 - La persistencia local de SQLite fue comprobada entre instancias de la aplicación. La persistencia de un archivo SQLite en Cloud Run no está resuelta por el contenedor.
 - Pytest muestra un aviso de deprecación del cliente de pruebas Starlette/httpx de las versiones instaladas; no produce fallos. Vite informa imports de React e íconos sin uso durante SSR; la compilación finaliza correctamente.
 

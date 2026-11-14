@@ -10,11 +10,11 @@ La inspección de esa URL mostró la página inicial de Google Cloud y los sigui
 - Región: `us-east1`.
 - Proyecto: `nasaspaceapps-474216`.
 
-Estos datos públicos no conceden acceso a la cuenta ni permiten recuperar el código. **No se modificó ni se desplegó ese servicio desde esta implementación.** Falta identificar el repositorio GitHub y disponer de autorización de despliegue en Google Cloud.
+Estos datos públicos no conceden acceso a la cuenta ni permiten recuperar el código. **No se modificó ni se desplegó ese servicio desde esta implementación.** El repositorio identificado es https://github.com/lucasortizalej5-ai/Agroshift-PY-. La autorización de GitHub permite integrar el código; para desplegar en Google Cloud se necesita acceso autorizado independiente.
 
 ## Cómo integrar el código en el repositorio real
 
-1. Obtener el enlace `https://github.com/organización/repositorio`.
+1. Repositorio confirmado: `https://github.com/lucasortizalej5-ai/Agroshift-PY-`. Se inspeccionó y estaba vacío.
 2. Clonar y revisar README, estructura, ramas y cambios existentes.
 3. Crear una rama de trabajo e integrar los archivos de este MVP sin reemplazar trabajo ajeno a ciegas.
 4. Instalar, ejecutar pruebas y compilar SSR.
@@ -84,4 +84,4 @@ No recomendamos montar un archivo SQLite directamente sobre Cloud Storage FUSE. 
 
 ## Estado de entrega
 
-Código local, compilación SSR y pruebas automatizadas preparados. La verificación real de NASA se registra en `VERIFICACION.md`. El repositorio remoto y el despliegue en el servicio recibido permanecen pendientes hasta identificar el repositorio y disponer de acceso autorizado al proyecto de Google Cloud.
+Código local, compilación SSR y pruebas automatizadas preparados. La verificación real de NASA se registra en `VERIFICACION.md`. El repositorio remoto confirmado es `lucasortizalej5-ai/Agroshift-PY-`. El despliegue en el servicio recibido permanece pendiente de disponer de acceso autorizado al proyecto de Google Cloud.

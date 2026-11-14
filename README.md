@@ -164,9 +164,14 @@ Más detalle en [ARQUITECTURA.md](docs/ARQUITECTURA.md).
 
 ## GitHub y el servicio Cloud Run proporcionado
 
-La dirección `https://team-raizen-ssr-cuzwnbtlga-ue.a.run.app/` identifica un **servicio Cloud Run**, no un repositorio GitHub. Al inspeccionarla mostraba la página inicial de Google Cloud, sin enlace al código.
+Repositorio del proyecto: [lucasortizalej5-ai/Agroshift-PY-](https://github.com/lucasortizalej5-ai/Agroshift-PY-).
 
-Este proyecto está preparado para incorporarse al repositorio real una vez identificado. No se configuró un remoto inventado ni se subieron credenciales. El procedimiento de integración y despliegue está en [CLOUD_RUN.md](docs/CLOUD_RUN.md).
+```powershell
+git clone https://github.com/lucasortizalej5-ai/Agroshift-PY-.git
+cd Agroshift-PY-
+```
+
+El repositorio fue inspeccionado antes de integrar el MVP y estaba vacío. La dirección `https://team-raizen-ssr-cuzwnbtlga-ue.a.run.app/` corresponde al destino Cloud Run. Subir código a GitHub y desplegar ese servicio son operaciones distintas. El procedimiento de despliegue está en [CLOUD_RUN.md](docs/CLOUD_RUN.md).
 
 **SQLite en Cloud Run:** la escritura en el sistema de archivos del contenedor es temporal. Un servicio con una sola instancia no garantiza persistencia tras reiniciar o reemplazar el contenedor. La demo puede usar almacenamiento temporal identificado; el uso real necesita resolver almacenamiento durable y concurrencia antes de publicarse. No montes SQLite en Cloud Storage FUSE esperando bloqueos de archivos fiables.
 
