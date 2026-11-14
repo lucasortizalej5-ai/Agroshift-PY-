@@ -1,0 +1,59 @@
+{
+  "source": "NASA POWER",
+  "source_url": "https://power.larc.nasa.gov/api/temporal/daily/point?parameters=T2M%2CT2M_MAX%2CT2M_MIN%2CPRECTOTCORR%2CRH2M&community=AG&latitude=-25.45&longitude=-54.92&start=20261009&end=20261107&format=JSON&time-standard=LST",
+  "fetched_at": "2026-11-14T20:11:14.162197+00:00",
+  "start_date": "2026-10-09",
+  "end_date": "2026-11-07",
+  "summary": {
+    "T2M": {
+      "value": 22.145333333333333,
+      "available_sum": null,
+      "unit": "°C",
+      "valid_days": 30,
+      "expected_days": 30,
+      "complete": true,
+      "aggregation": "promedio"
+    },
+    "T2M_MAX": {
+      "value": 27.071,
+      "available_sum": null,
+      "unit": "°C",
+      "valid_days": 30,
+      "expected_days": 30,
+      "complete": true,
+      "aggregation": "promedio"
+    },
+    "T2M_MIN": {
+      "value": 17.756666666666668,
+      "available_sum": null,
+      "unit": "°C",
+      "valid_days": 30,
+      "expected_days": 30,
+      "complete": true,
+      "aggregation": "promedio"
+    },
+    "PRECTOTCORR": {
+      "value": 283.46,
+      "available_sum": 283.46,
+      "unit": "mm",
+      "valid_days": 30,
+      "expected_days": 30,
+      "complete": true,
+      "aggregation": "suma"
+    },
+    "RH2M": {
+      "value": 81.81333333333333,
+      "available_sum": null,
+      "unit": "%",
+      "valid_days": 30,
+      "expected_days": 30,
+      "complete": true,
+      "aggregation": "promedio"
+    }
+  },
+  "warnings": [],
+  "upstream_sources": [
+    "GEOSIT",
+    "POWER"
+  ]
+}

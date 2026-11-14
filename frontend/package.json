@@ -1,0 +1,31 @@
+{
+  "name": "agroshift-py-web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "node server.mjs",
+    "build": "vite build --outDir dist/client && vite build --ssr src/entry-server.jsx --outDir dist/server",
+    "start": "node server.mjs --production",
+    "test": "node --test",
+    "format": "prettier --write src server.mjs ssr-utils.mjs tests vite.config.js"
+  },
+  "dependencies": {
+    "@tailwindcss/vite": "^4.1.17",
+    "@vitejs/plugin-react": "^5.1.0",
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "leaflet": "^1.9.4",
+    "lucide-react": "^0.468.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "tailwindcss": "^4.1.17",
+    "vite": "^7.2.2"
+  },
+  "devDependencies": {
+    "prettier": "^3.10.1"
+  }
+}
