@@ -1,0 +1,37 @@
+name: agroshift-py
+
+services:
+  agroshift:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: agroshift-py:local
+    # Compose no inyecta automáticamente .env en el contenedor.
+    env_file:
+      - .env
+    environment:
+      # Valores internos de Docker; los de desarrollo local no aplican aquí.
+      APP_ENV: production
+      HOST: 0.0.0.0
+      PORT: "8080"
+      API_BASE_URL: http://127.0.0.1:8000
+      DATABASE_PATH: /data/agroshift.sqlite3
+      # Fallar antes del arranque si falta una credencial.
+      WEB_USERNAME: ${WEB_USERNAME:?Completá WEB_USERNAME en el archivo .env}
+      WEB_PASSWORD: ${WEB_PASSWORD:?Completá WEB_PASSWORD en el archivo .env}
+      API_INTERNAL_TOKEN: ${API_INTERNAL_TOKEN:?Completá API_INTERNAL_TOKEN en el archivo .env}
+    ports:
+      - "127.0.0.1:${AGROSHIFT_PORT:-8080}:8080"
+    volumes:
+      - agroshift-data:/data
+    init: true
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/healthz', timeout=3)"]
+      interval: 30s
+      timeout: 5s
+      start_period: 30s
+      retries: 3
+
+volumes:
+  agroshift-data:

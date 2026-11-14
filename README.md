@@ -34,6 +34,14 @@ Necesitás:
 
 No necesitás instalar SQLite por separado: Python ya lo incluye.
 
+## Ejecutar con Docker Compose
+
+Si ya usás Docker Desktop, podés iniciar el sistema completo con `docker compose up -d --build`. El nuevo `compose.yaml` carga las credenciales de tu `.env`, configura los puertos internos y conserva SQLite en un volumen. Primero completá `WEB_USERNAME`, `WEB_PASSWORD` (12+ caracteres) y `API_INTERNAL_TOKEN` (32+ caracteres) en tu `.env`.
+
+Abrí **http://localhost:8080**. Si modificás `.env`, ejecutá `docker compose up -d --force-recreate` para aplicar los cambios. Instrucciones completas: [DOCKER_COMPOSE.md](docs/DOCKER_COMPOSE.md).
+
+Las instrucciones siguientes con dos terminales son otra forma de ejecutar el proyecto, sin Docker.
+
 ## Instalar y ejecutar: dos terminales de PowerShell
 
 Descomprimí el proyecto. Abrí PowerShell **dentro de la carpeta que contiene este README**. Si recibiste un repositorio GitHub, primero clonalo y entrá a esa carpeta; la dirección de Cloud Run no se usa con `git clone`.
