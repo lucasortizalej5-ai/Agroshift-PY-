@@ -1,0 +1,26 @@
+name: agroshift-py
+
+services:
+  agroshift:
+    build: .
+    image: agroshift-py:local
+    init: true
+    env_file:
+      - .env
+    environment:
+      WEB_USERNAME: ${WEB_USERNAME:?WEB_USERNAME es requerido}
+      WEB_PASSWORD: ${WEB_PASSWORD:?WEB_PASSWORD es requerido}
+      API_INTERNAL_TOKEN: ${API_INTERNAL_TOKEN:?API_INTERNAL_TOKEN es requerido}
+      APP_ENV: production
+      HOST: "0.0.0.0"
+      PORT: "8080"
+      API_BASE_URL: http://127.0.0.1:8000
+      DATABASE_PATH: /data/agroshift.sqlite3
+    ports:
+      - "${AGROSHIFT_HOST_IP:-127.0.0.1}:${AGROSHIFT_PORT:-8080}:8080"
+    volumes:
+      - agroshift-data:/data
+    restart: unless-stopped
+
+volumes:
+  agroshift-data:

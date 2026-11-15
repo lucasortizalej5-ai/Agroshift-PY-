@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Home,
   Map,
   Leaf,
   Repeat2,
   Sun,
+  Moon,
+  LogOut,
   BookOpen,
   Plus,
   ArrowRight,
@@ -27,9 +29,7 @@ import {
   AlertTriangle,
   LoaderCircle,
   Check,
-  ChevronDown,
   Sprout,
-  Database,
 } from "lucide-react";
 import PlotForm from "./components/PlotForm.jsx";
 import PlotMap from "./components/Map.jsx";
@@ -39,14 +39,21 @@ import Environment, {
 } from "./components/Environment.jsx";
 import Rotation from "./components/Rotation.jsx";
 import { request, number, dayLabel } from "./api.js";
+import {
+  translations,
+  translateCropName,
+  translateTexture,
+  translateDrainage,
+  SOURCES_ARTICLES,
+} from "./i18n.js";
 
-const NAV = [
-  ["dashboard", "Mi campo", Home],
-  ["parcels", "Mis parcelas", Map],
-  ["rotation", "Rotación de cultivos", Repeat2],
-  ["climate", "Clima y datos NASA", Sun],
-  ["soil", "Mi suelo", Layers],
-  ["sources", "Fuentes y metodología", BookOpen],
+const NAV_DEFS = [
+  ["dashboard", "nav_dashboard", Home],
+  ["parcels", "nav_parcels", Map],
+  ["rotation", "nav_rotation", Repeat2],
+  ["climate", "nav_climate", Sun],
+  ["soil", "nav_soil", Layers],
+  ["sources", "nav_sources", BookOpen],
 ];
 
 function Metric({ label, value, unit, icon: Icon, detail }) {
@@ -66,23 +73,28 @@ function Metric({ label, value, unit, icon: Icon, detail }) {
     </article>
   );
 }
+
 function Empty({
   onNew,
-  title = "Tu campo empieza acá.",
-  text = "Registrá una parcela y su cultivo anterior. Consultaremos datos reales de NASA para ayudarte a explorar el próximo paso.",
+  title,
+  text,
+  cta,
+  lang = "en",
+  t = (k) => translations.en[k] || translations.es[k] || k,
 }) {
   return (
     <div className="empty-state">
       <Sprout />
-      <h2>{title}</h2>
-      <p>{text}</p>
+      <h2>{title || t("empty_plots_title")}</h2>
+      <p>{text || t("empty_plots_desc")}</p>
       <button className="button button-green" onClick={() => onNew()}>
-        Registrar mi primera parcela
+        {cta || t("empty_plots_cta")}
         <ArrowRight />
       </button>
     </div>
   );
 }
+
 function Dashboard({
   parcels,
   parcel,
@@ -92,49 +104,50 @@ function Dashboard({
   onNavigate,
   onAnalyze,
   busy,
+  lang = "en",
+  t = (k) => translations.en[k] || translations.es[k] || k,
 }) {
   const c = parcel?.climate,
     s = c?.summary,
     r = parcel?.recommendation;
+
   const complete = (p) =>
     s?.[p]
-      ? `${s[p].valid_days}/${s[p].expected_days} días válidos`
-      : "Todavía sin consulta NASA";
+      ? `${s[p].valid_days}/${s[p].expected_days} ${t("valid_days")}`
+      : t("no_nasa_yet");
+
   return (
     <>
       <section className="hero-card">
         <div className="hero-copy">
           <span className="hero-badge">
             <Satellite size={13} />
-            CON DATOS DE NASA POWER
+            {t("nasa_badge")}
           </span>
           <h1>
-            Una mejor decisión,
+            {t("hero_title_1")}
             <br />
-            <span>una tierra más sana.</span>
+            <span>{t("hero_title_2")}</span>
           </h1>
-          <p>
-            Conectá tu parcela con la ciencia del espacio. Explorá qué cultivar
-            después, con datos reales y una explicación para cada paso.
-          </p>
+          <p>{t("hero_desc")}</p>
           <div className="hero-actions">
             <button className="button button-yellow" onClick={() => onNew()}>
               <Leaf />
-              Planificar mi rotación
+              {t("plan_rotation")}
               <ArrowRight />
             </button>
             <button
               className="hero-secondary"
               onClick={() => onNavigate("sources")}
             >
-              Conocer el proyecto
+              {t("learn_project")}
             </button>
           </div>
         </div>
         <div
           className="hero-image"
           role="img"
-          aria-label="Paisaje de campos agrícolas"
+          aria-label={t("hero_image_aria")}
         >
           <div className="orbit">
             <span>NASA POWER</span>
@@ -142,74 +155,79 @@ function Dashboard({
           <div className="hero-caption">
             <Globe2 size={26} />
             <p>
-              Agricultura con los pies en la tierra.
-              <br />Y la mirada en el espacio.
+              {t("orbit_caption_1")}
+              <br />
+              {t("orbit_caption_2")}
             </p>
           </div>
         </div>
       </section>
+
       <div className="section-heading">
         <div>
-          <h2>Una mirada a tu campo</h2>
+          <h2>{t("look_at_field")}</h2>
           <p>
             {parcels.length}{" "}
             {parcels.length === 1
-              ? "parcela registrada"
-              : "parcelas registradas"}{" "}
-            · {parcel?.name || "Empecemos por conocer tu terreno"}
+              ? t("registered_plots_single")
+              : t("registered_plots_plural")}{" "}
+            · {parcel?.name || t("start_by_knowing")}
           </p>
         </div>
         <span className="location-badge">
           <MapPin size={13} />
-          Alto Paraná, Paraguay
+          {t("location_badge")}
         </span>
       </div>
+
       <div className="metric-grid">
         <Metric
-          label="Temperatura media"
-          value={number(s?.T2M?.value)}
+          label={t("metric_temp")}
+          value={number(s?.T2M?.value, 1, lang)}
           unit="°C"
           icon={Thermometer}
           detail={complete("T2M")}
         />
         <Metric
-          label="Lluvia acumulada"
-          value={number(s?.PRECTOTCORR?.value)}
+          label={t("metric_rain")}
+          value={number(s?.PRECTOTCORR?.value, 1, lang)}
           unit="mm"
           icon={CloudRain}
           detail={complete("PRECTOTCORR")}
         />
         <Metric
-          label="Humedad del aire"
-          value={number(s?.RH2M?.value, 0)}
+          label={t("metric_humidity")}
+          value={number(s?.RH2M?.value, 0, lang)}
           unit="%"
           icon={Wind}
           detail={complete("RH2M")}
         />
         <Metric
-          label="Superficie de la parcela"
-          value={number(parcel?.area_ha, 2)}
+          label={t("metric_area")}
+          value={number(parcel?.area_ha, 2, lang)}
           unit="ha"
           icon={Layers}
           detail={
             parcel
-              ? `${number(parcel.radius_m, 0)} m de radio · área aproximada`
-              : "Registrá un punto y su radio"
+              ? `${number(parcel.radius_m, 0, lang)} ${t("radius_approx_detail")}`
+              : t("register_point_detail")
           }
         />
       </div>
+
       <p className="subtle-note">
         <Info size={13} />
         {c
-          ? `${dayLabel(c.start_date)} a ${dayLabel(c.end_date)} · Resúmenes de estimaciones NASA. No son pronósticos.`
-          : "No mostramos valores de ejemplo como si fueran mediciones de tu parcela."}
+          ? `${dayLabel(c.start_date, lang)} — ${dayLabel(c.end_date, lang)} · ${t("nasa_subtle_note_prefix")}`
+          : t("no_measurements_fake")}
       </p>
+
       <div className="dashboard-grid">
         <section className="card section-pad">
           <div className="card-heading">
             <div>
-              <h2>Dale un nuevo ciclo a tu tierra</h2>
-              <p>Un primer paso: alternar familias de cultivos.</p>
+              <h2>{t("rotation_card_title")}</h2>
+              <p>{t("rotation_card_desc")}</p>
             </div>
             <Repeat2 size={19} />
           </div>
@@ -218,9 +236,11 @@ function Dashboard({
               <div className="mini-candidates">
                 {r.candidates.slice(0, 3).map((crop, i) => (
                   <div className="mini-crop" key={crop.id}>
-                    <span>OPCIÓN 0{i + 1}</span>
+                    <span>
+                      {t("option_label")} 0{i + 1}
+                    </span>
                     <Sprout />
-                    <h3>{crop.name}</h3>
+                    <h3>{translateCropName(crop.name, lang)}</h3>
                     <p>{crop.family}</p>
                   </div>
                 ))}
@@ -228,13 +248,13 @@ function Dashboard({
               <div className="card-bottom">
                 <span>
                   <ShieldCheck size={13} />
-                  Opciones para evaluar, sin ranking
+                  {t("eval_options")}
                 </span>
                 <button
                   className="inline-link"
                   onClick={() => onNavigate("rotation")}
                 >
-                  Ver explicación
+                  {t("view_explanation")}
                   <ArrowRight size={13} />
                 </button>
               </div>
@@ -244,24 +264,25 @@ function Dashboard({
               <Sprout />
               <p>
                 {parcel
-                  ? "Agregá el cultivo anterior para explorar otras familias."
-                  : "Conocé las posibilidades de tu próximo ciclo."}
+                  ? t("rotation_empty_has_parcel")
+                  : t("rotation_empty_no_parcel")}
               </p>
               <button
                 className="inline-link"
                 onClick={() => (parcel ? onEdit(parcel) : onNew())}
               >
-                {parcel ? "Completar historial" : "Registrar mi parcela"}
+                {parcel ? t("complete_history") : t("register_plot")}
                 <ArrowRight size={14} />
               </button>
             </div>
           )}
         </section>
+
         <section className="card map-card">
           <div className="card-heading">
             <div>
-              <h2>Tu lugar en el mapa</h2>
-              <p>{parcel?.name || "Ubicación de referencia · no registrada"}</p>
+              <h2>{t("your_place_map")}</h2>
+              <p>{parcel?.name || t("ref_unregistered")}</p>
             </div>
             <MapPin size={18} />
           </div>
@@ -272,29 +293,31 @@ function Dashboard({
             radius={parcel?.radius_m ?? 200}
             boundary={region?.boundary}
             compact
+            lang={lang}
           />
           <div className="map-bottom">
             <span>
               {parcel
-                ? `${number(parcel.latitude, 3)}, ${number(parcel.longitude, 3)}`
-                : "Referencia: Minga Guazú"}
+                ? `${number(parcel.latitude, 3, lang)}, ${number(parcel.longitude, 3, lang)}`
+                : t("ref_minga")}
             </span>
             <button
               className="inline-link"
               onClick={() => (parcel ? onEdit(parcel) : onNew())}
             >
-              {parcel ? "Editar ubicación" : "Elegir mi ubicación"}
+              {parcel ? t("complete_history") : t("register_plot")}
               <ArrowRight size={13} />
             </button>
           </div>
         </section>
       </div>
+
       <div className="dashboard-grid second-row">
         <section className="card section-pad">
           <div className="card-heading">
             <div>
-              <h2>El clima, en perspectiva</h2>
-              <p>Datos diarios del período consultado.</p>
+              <h2>{t("climate_perspective")}</h2>
+              <p>{t("climate_sub")}</p>
             </div>
             <button
               className="inline-link"
@@ -304,49 +327,48 @@ function Dashboard({
               <ArrowRight size={13} />
             </button>
           </div>
-          <ClimateChart climate={c} />
+          <ClimateChart climate={c} lang={lang} />
         </section>
+
         <section className="card section-pad">
           <div className="card-heading">
             <div>
-              <h2>Cada dato tiene su lugar</h2>
-              <p>Ciencia clara, sin confundir estimaciones.</p>
+              <h2>{t("every_data")}</h2>
+              <p>{t("every_data_sub")}</p>
             </div>
             <Info size={18} />
           </div>
           <div className="data-status">
             <Satellite />
             <div>
-              <strong>Clima de NASA</strong>
-              <p>
-                {c
-                  ? "Estimaciones meteorológicas con fuente y fecha."
-                  : "Pendiente de consulta para tu parcela."}
-              </p>
+              <strong>{t("nasa_climate")}</strong>
+              <p>{c ? t("nasa_desc_has_climate") : t("nasa_pending")}</p>
             </div>
             <span className={`status-chip ${c ? "ready" : ""}`}>
-              {c ? "Disponible" : "Pendiente"}
+              {c ? t("status_available") : t("status_pending")}
             </span>
           </div>
           <div className="data-status">
             <Leaf />
             <div>
-              <strong>Historial del cultivo</strong>
-              <p>Información que aporta el productor.</p>
+              <strong>{t("crop_history")}</strong>
+              <p>{t("crop_history_sub")}</p>
             </div>
             <span
               className={`status-chip ${parcel?.previous_crop ? "ready" : ""}`}
             >
-              {parcel?.previous_crop ? "Registrado" : "Pendiente"}
+              {parcel?.previous_crop
+                ? t("status_registered")
+                : t("status_pending")}
             </span>
           </div>
           <div className="data-status">
             <Layers />
             <div>
-              <strong>Fertilidad nutricional</strong>
-              <p>Requiere un análisis de suelo completo.</p>
+              <strong>{t("soil_fertility")}</strong>
+              <p>{t("soil_fertility_sub")}</p>
             </div>
-            <span className="status-chip">Sin determinar</span>
+            <span className="status-chip">{t("status_undetermined")}</span>
           </div>
           {parcel && !c && (
             <button
@@ -355,42 +377,46 @@ function Dashboard({
               onClick={onAnalyze}
             >
               {busy ? <LoaderCircle className="spin" /> : <RefreshCw />}
-              {busy ? "Consultando…" : "Consultar NASA"}
+              {busy ? t("querying") : t("query_nasa")}
             </button>
           )}
         </section>
       </div>
+
       <section className="soil-strip">
         <Layers />
         <div>
-          <h3>Lo que sabemos. Lo que falta medir.</h3>
-          <p>
-            Los datos del espacio aportan contexto. Conocer la fertilidad
-            requiere analizar tu suelo.
-          </p>
+          <h3>{t("soil_strip_title")}</h3>
+          <p>{t("soil_strip_desc")}</p>
         </div>
         <button className="inline-link" onClick={() => onNavigate("soil")}>
-          Ver información del suelo
+          {t("soil_strip_btn")}
           <ArrowRight size={14} />
         </button>
       </section>
-      {c && <SourceMeta climate={c} />}
+      {c && <SourceMeta climate={c} lang={lang} />}
     </>
   );
 }
-function Plots({ parcels, onNew, onEdit, onSelect, onDelete }) {
+
+function Plots({
+  parcels,
+  onNew,
+  onEdit,
+  onSelect,
+  onDelete,
+  lang = "en",
+  t = (k) => translations.en[k] || translations.es[k] || k,
+}) {
   return (
     <>
       <div className="page-intro">
-        <p className="eyebrow">TU ESPACIO DE CULTIVO</p>
-        <h1>Tus parcelas, en un solo lugar.</h1>
-        <p>
-          Ubicación, historial y datos ambientales. La información queda
-          guardada en esta instalación.
-        </p>
+        <p className="eyebrow">{t("plots_eyebrow")}</p>
+        <h1>{t("plots_title")}</h1>
+        <p>{t("plots_desc")}</p>
       </div>
       {!parcels.length ? (
-        <Empty onNew={onNew} />
+        <Empty onNew={onNew} lang={lang} t={t} />
       ) : (
         <div className="plot-grid">
           {parcels.map((p) => (
@@ -399,39 +425,38 @@ function Plots({ parcels, onNew, onEdit, onSelect, onDelete }) {
                 <MapPin />
               </div>
               <div className="section-pad">
-                <span className="eyebrow">ALTO PARANÁ</span>
+                <span className="eyebrow">{t("plot_region_badge")}</span>
                 <h2>{p.name}</h2>
                 <p className="muted small mt-2">
-                  {number(p.area_ha, 2)} ha · radio de {number(p.radius_m, 0)} m
+                  {number(p.area_ha, 2, lang)} ha · {t("plot_radius_label")}{" "}
+                  {number(p.radius_m, 0, lang)} m
                   <br />
-                  {number(p.latitude, 4)}, {number(p.longitude, 4)}
+                  {number(p.latitude, 4, lang)}, {number(p.longitude, 4, lang)}
                 </p>
                 <span
                   className={`status-chip mt-3 ${p.climate ? "ready" : ""}`}
                 >
-                  {p.climate
-                    ? "Datos NASA guardados"
-                    : "Consulta NASA pendiente"}
+                  {p.climate ? t("nasa_data_saved") : t("nasa_query_pending")}
                 </span>
                 <div className="plot-actions">
                   <button
                     className="button button-green"
                     onClick={() => onSelect(p.id)}
                   >
-                    Ver parcela
+                    {t("view_plot")}
                     <ArrowRight />
                   </button>
                   <button
                     className="icon-button"
                     onClick={() => onEdit(p)}
-                    aria-label={`Editar ${p.name}`}
+                    aria-label={`${t("edit_plot")} ${p.name}`}
                   >
                     <Pencil />
                   </button>
                   <button
                     className="icon-button danger"
                     onClick={() => onDelete(p)}
-                    aria-label={`Eliminar ${p.name}`}
+                    aria-label={`${t("delete_plot")} ${p.name}`}
                   >
                     <Trash2 />
                   </button>
@@ -444,64 +469,60 @@ function Plots({ parcels, onNew, onEdit, onSelect, onDelete }) {
     </>
   );
 }
-function Soil({ parcel, onEdit, onNew }) {
+
+function Soil({
+  parcel,
+  onEdit,
+  onNew,
+  lang = "en",
+  t = (k) => translations.en[k] || translations.es[k] || k,
+}) {
   return (
     <>
       <div className="page-intro">
-        <p className="eyebrow">INFORMACIÓN APORTADA POR EL PRODUCTOR</p>
-        <h1>Un suelo sano empieza por conocerlo.</h1>
-        <p>
-          Registrá lo que observás y lo que mediste. Los datos de NASA POWER no
-          determinan la composición nutricional del terreno.
-        </p>
+        <p className="eyebrow">{t("soil_eyebrow")}</p>
+        <h1>{t("soil_title")}</h1>
+        <p>{t("soil_desc")}</p>
       </div>
       {!parcel ? (
-        <Empty onNew={onNew} />
+        <Empty onNew={onNew} lang={lang} t={t} />
       ) : (
         <>
           <div className="soil-facts">
             <div className="card section-pad">
               <Layers />
-              <p>Textura observada</p>
-              <strong>{parcel.soil_texture}</strong>
+              <p>{t("observed_texture")}</p>
+              <strong>{translateTexture(parcel.soil_texture, lang)}</strong>
             </div>
             <div className="card section-pad">
               <CloudRain />
-              <p>Drenaje observado</p>
-              <strong>{parcel.drainage}</strong>
+              <p>{t("observed_drainage")}</p>
+              <strong>{translateDrainage(parcel.drainage, lang)}</strong>
             </div>
             <div className="card section-pad">
               <Leaf />
-              <p>pH del análisis</p>
-              <strong>{number(parcel.soil_ph)}</strong>
+              <p>{t("analysis_ph")}</p>
+              <strong>{number(parcel.soil_ph, 1, lang)}</strong>
               <small>
                 {parcel.soil_test_date
-                  ? "Medido el " + dayLabel(parcel.soil_test_date)
-                  : "Sin medición registrada"}
+                  ? t("measured_on").replace(
+                      "{date}",
+                      dayLabel(parcel.soil_test_date, lang),
+                    )
+                  : t("no_measurement")}
               </small>
             </div>
           </div>
           <section className="card section-pad mt-5">
-            <h2>Fertilidad nutricional: no determinada</h2>
-            <p className="muted mt-3">
-              No calculamos nitrógeno, fósforo, potasio ni dosis de
-              fertilizantes. Un valor de pH tampoco reemplaza un análisis
-              nutricional completo.
-            </p>
-            <p className="muted small mt-3">
-              La textura y el drenaje se guardan como observaciones. Esta
-              primera versión no los usa para calcular agua disponible ni
-              aptitud de cultivos.
-            </p>
+            <h2>{t("fertility_not_determined")}</h2>
+            <p className="muted mt-3">{t("fertility_desc_1")}</p>
+            <p className="muted small mt-3">{t("fertility_desc_2")}</p>
           </section>
           <section className="soil-strip">
             <Layers />
             <div>
-              <h3>El próximo paso: una muestra de suelo.</h3>
-              <p>
-                Consultá a un laboratorio o técnico local para definir el
-                muestreo, la interpretación y el manejo.
-              </p>
+              <h3>{t("soil_next_step_title")}</h3>
+              <p>{t("soil_next_step_desc")}</p>
             </div>
           </section>
           <button
@@ -509,11 +530,11 @@ function Soil({ parcel, onEdit, onNew }) {
             onClick={() => onEdit(parcel)}
           >
             <Pencil />
-            Actualizar datos de suelo
+            {t("update_soil_btn")}
           </button>
           {parcel.notes && (
             <section className="card section-pad mt-5">
-              <h2>Observaciones del terreno</h2>
+              <h2>{t("field_observations")}</h2>
               <p className="muted mt-3 whitespace-pre-wrap">{parcel.notes}</p>
             </section>
           )}
@@ -522,51 +543,56 @@ function Soil({ parcel, onEdit, onNew }) {
     </>
   );
 }
-function Sources() {
+
+function Sources({
+  lang = "en",
+  t = (k) => translations.en[k] || translations.es[k] || k,
+}) {
   const articles = [
     [
       Satellite,
-      "Clima real, con una fuente identificable",
-      "NASA POWER aporta series diarias de temperatura media, máxima y mínima, precipitación corregida y humedad relativa del aire. Son estimaciones meteorológicas basadas en modelos y asimilación de observaciones; no son sensores instalados en tu terreno.",
-      "https://power.larc.nasa.gov/docs/services/api/temporal/daily/",
+      SOURCES_ARTICLES[0].title[lang],
+      SOURCES_ARTICLES[0].text[lang],
+      SOURCES_ARTICLES[0].url,
     ],
     [
       Globe2,
-      "La escala importa",
-      "La grilla meteorológica nativa tiene aproximadamente 0,5° de latitud × 0,625° de longitud. Parcelas cercanas pueden compartir valores. Consultamos el centro del círculo; su radio no vuelve más precisos los datos.",
-      "https://power.larc.nasa.gov/docs/methodology/data/sources_meteorology/",
+      SOURCES_ARTICLES[1].title[lang],
+      SOURCES_ARTICLES[1].text[lang],
+      SOURCES_ARTICLES[1].url,
     ],
     [
       Repeat2,
-      "Rotaciones con reglas explícitas",
-      "El catálogo inicial contiene soja, maíz, trigo, mandioca y poroto. El filtro evita repetir inmediatamente el cultivo y prioriza familias diferentes. Ofrece opciones sin ranking. No determina aptitud, rendimiento ni fechas de siembra.",
-      "https://www.nrcs.usda.gov/sites/default/files/2022-10/National-Agronomy-Manual.pdf",
+      SOURCES_ARTICLES[2].title[lang],
+      SOURCES_ARTICLES[2].text[lang],
+      SOURCES_ARTICLES[2].url,
     ],
     [
       BookOpen,
-      "Del espacio a una mejor pregunta",
-      "La investigación difundida por NASA muestra que la rotación debe considerar el contexto y que sus resultados varían. Este MVP usa NASA como contexto ambiental y el historial declarado para una primera diversificación; necesita validación agronómica local.",
-      "https://science.nasa.gov/earth/earth-observatory/how-to-rotate-crops-154601/",
+      SOURCES_ARTICLES[3].title[lang],
+      SOURCES_ARTICLES[3].text[lang],
+      SOURCES_ARTICLES[3].url,
     ],
     [
       Info,
-      "Datos faltantes, a la vista",
-      "No interpolamos valores ni reemplazamos faltantes por cero. Los promedios indican cuántos días válidos utilizan. La lluvia total del período se muestra solo si todos sus días tienen datos válidos. La copia de una consulta fallida se identifica con su fecha original.",
-      null,
+      SOURCES_ARTICLES[4].title[lang],
+      SOURCES_ARTICLES[4].text[lang],
+      SOURCES_ARTICLES[4].url,
     ],
     [
       ShieldCheck,
-      "Tus datos y esta instalación",
-      "Esta etapa es de uso de un equipo. Las parcelas se guardan en SQLite en el servidor local; no hay cuentas individuales. Para publicar el contenedor se exige acceso protegido. NASA recibe las coordenadas consultadas y OpenStreetMap las solicitudes de mapas.",
-      null,
+      SOURCES_ARTICLES[5].title[lang],
+      SOURCES_ARTICLES[5].text[lang],
+      SOURCES_ARTICLES[5].url,
     ],
   ];
+
   return (
     <>
       <div className="page-intro">
-        <p className="eyebrow">CIENCIA QUE PODÉS REVISAR</p>
-        <h1>Cada recomendación tiene un porqué.</h1>
-        <p>Una fuente, una regla y un límite. Conocelos antes de decidir.</p>
+        <p className="eyebrow">{t("sources_eyebrow")}</p>
+        <h1>{t("sources_title")}</h1>
+        <p>{t("sources_desc")}</p>
       </div>
       <div className="sources-grid">
         {articles.map(([Icon, title, text, url]) => (
@@ -581,7 +607,7 @@ function Sources() {
                 rel="noreferrer"
                 className="inline-link mt-4"
               >
-                Consultar fuente
+                {t("consult_source")}
                 <ArrowRight size={13} />
               </a>
             )}
@@ -591,25 +617,12 @@ function Sources() {
       <div className="warning mt-5">
         <Info />
         <div>
-          <strong>Lo que viene después de este primer MVP</strong>
-          <p>
-            Riego con balance hídrico y supuestos explícitos, orientación
-            nutricional con análisis de suelo, indicadores de riesgos validados
-            y ventanas de cosecha por variedad y fecha de siembra. GPM y SMAP
-            están evaluados en la documentación, todavía sin integrar.
-          </p>
+          <strong>{t("future_title")}</strong>
+          <p>{t("future_desc")}</p>
         </div>
       </div>
-      <p className="subtle-note mt-5">
-        Cartografía: © OpenStreetMap contributors y geoBoundaries (CC BY 4.0),
-        límite departamental de referencia 2012. La delimitación es aproximada.
-        Fotografía: paisaje ilustrativo de Unsplash; no corresponde a la parcela
-        registrada.
-      </p>
-      <p className="subtle-note mt-3">
-        Proyecto independiente. El uso de datos de NASA no implica aval
-        institucional de NASA.
-      </p>
+      <p className="subtle-note mt-5">{t("sources_footnote_1")}</p>
+      <p className="subtle-note mt-3">{t("sources_footnote_2")}</p>
     </>
   );
 }
@@ -624,29 +637,105 @@ export default function App({ initialState }) {
     [notice, setNotice] = useState(""),
     [menu, setMenu] = useState(false),
     [error, setError] = useState("");
+
+  // The first browser render must match the HTML sent by SSR.
+  const [lang, setLang] = useState(
+    initialState.initialLang === "es" ? "es" : "en",
+  );
+  const [darkMode, setDarkMode] = useState(false);
+  const themeReady = useRef(false);
+  useEffect(() => {
+    try {
+      setDarkMode(localStorage.getItem("agroshift_theme") === "dark");
+      const savedLang = localStorage.getItem("agroshift_lang");
+      if (savedLang === "es" || savedLang === "en") setLang(savedLang);
+    } catch {
+      /* Browser storage may be disabled. */
+    }
+  }, []);
+
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    if (typeof document !== "undefined") {
+      document.documentElement.classList.toggle("dark", darkMode);
+      document.documentElement.setAttribute(
+        "data-theme",
+        darkMode ? "dark" : "light",
+      );
+      if (themeReady.current) {
+        try {
+          localStorage.setItem("agroshift_theme", darkMode ? "dark" : "light");
+        } catch {}
+      }
+      themeReady.current = true;
+    }
+  }, [darkMode]);
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const t = (key) =>
+    translations[lang]?.[key] ||
+    translations.en[key] ||
+    translations.es[key] ||
+    key;
+
+  const handleLanguageChange = (newLang) => {
+    setLang(newLang);
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem("agroshift_lang", newLang);
+      } catch {}
+      document.cookie = `agroshift_lang=${newLang};path=/;max-age=31536000`;
+    }
+  };
+
+  const toggleDarkMode = () => {
+    setDarkMode((prev) => !prev);
+  };
+
+  useEffect(() => {
+    document.documentElement.lang = lang;
+  }, [lang]);
+
+  const NAV = NAV_DEFS.map(([id, key, Icon]) => [id, t(key), Icon]);
   const parcel = parcels.find((p) => p.id === activeId) || parcels[0] || null;
   const region = initialState.region,
     period = initialState.default_period;
+
   useEffect(() => {
     if (notice) {
       const id = setTimeout(() => setNotice(""), 8000);
       return () => clearTimeout(id);
     }
   }, [notice]);
+
   function navigate(route) {
     setView(route);
     setMenu(false);
     setError("");
     window.scrollTo({ top: 0, behavior: "instant" });
   }
+
   function openForm(p) {
     setEditing(p || null);
     setModal(true);
   }
+
   function replaceParcel(p) {
     setParcels((items) => [p, ...items.filter((x) => x.id !== p.id)]);
     setActiveId(p.id);
   }
+
   async function analyze(dates = period, refresh = false) {
     if (!parcel || busy) return;
     const id = parcel.id;
@@ -659,9 +748,7 @@ export default function App({ initialState }) {
       });
       setParcels((items) => items.map((p) => (p.id === id ? result : p)));
       setNotice(
-        result.climate.stale
-          ? "No se pudo actualizar: se conservó una copia anterior de esta consulta."
-          : "Datos reales de NASA POWER consultados y guardados.",
+        result.climate.stale ? t("stale_data_saved") : t("real_data_saved"),
       );
     } catch (e) {
       setError(e.message);
@@ -669,29 +756,30 @@ export default function App({ initialState }) {
       setBusy(false);
     }
   }
+
   async function remove(p) {
-    if (!window.confirm(`¿Eliminar «${p.name}» y su consulta guardada?`))
-      return;
+    if (!window.confirm(t("confirm_delete").replace("{name}", p.name))) return;
     try {
       await request(`/api/parcels/${p.id}`, { method: "DELETE" });
       setParcels((items) => items.filter((x) => x.id !== p.id));
-      setNotice("Parcela eliminada.");
+      setNotice(t("parcel_deleted"));
     } catch (e) {
       setError(e.message);
     }
   }
+
   let content;
   if (initialState.error)
     content = (
       <div className="empty-state">
         <AlertTriangle />
-        <h2>Necesitamos conectar el servidor.</h2>
+        <h2>{t("reconnect_title")}</h2>
         <p>{initialState.error}</p>
         <button
           className="button button-green"
           onClick={() => window.location.reload()}
         >
-          Reintentar
+          {t("retry")}
           <RefreshCw />
         </button>
       </div>
@@ -704,6 +792,8 @@ export default function App({ initialState }) {
         onEdit={openForm}
         onNavigate={navigate}
         onAnalyze={() => analyze()}
+        lang={lang}
+        t={t}
       />
     );
   else if (view === "parcels")
@@ -717,10 +807,12 @@ export default function App({ initialState }) {
           navigate("dashboard");
         }}
         onDelete={remove}
+        lang={lang}
+        t={t}
       />
     );
   else if (view === "rotation")
-    content = <Rotation parcel={parcel} onEdit={openForm} />;
+    content = <Rotation parcel={parcel} onEdit={openForm} lang={lang} />;
   else if (view === "climate")
     content = parcel ? (
       <Environment
@@ -729,28 +821,40 @@ export default function App({ initialState }) {
         period={period}
         onAnalyze={analyze}
         busy={busy}
+        lang={lang}
       />
     ) : (
       <Empty
         onNew={openForm}
-        title="Un lugar para conectar los datos."
-        text="Registrá una parcela para consultar su punto central en NASA POWER."
+        title={t("climate_empty_1")}
+        text={t("climate_empty_2")}
+        lang={lang}
+        t={t}
       />
     );
   else if (view === "soil")
-    content = <Soil parcel={parcel} onEdit={openForm} onNew={openForm} />;
-  else content = <Sources />;
+    content = (
+      <Soil
+        parcel={parcel}
+        onEdit={openForm}
+        onNew={openForm}
+        lang={lang}
+        t={t}
+      />
+    );
+  else content = <Sources lang={lang} t={t} />;
+
   return (
     <div className="app-shell">
       <aside className={`sidebar ${menu ? "open" : ""}`}>
-        <a className="brand" href="/" aria-label="AgroShift PY inicio">
+        <a className="brand" href="/" aria-label="AgroShift PY">
           <img src="/icon.svg" alt="" />
           <span>
             AgroShift<b>PY</b>
           </span>
         </a>
-        <p className="brand-tag">DEL ESPACIO A TU TIERRA</p>
-        <p className="nav-caption">TU ESPACIO DE CULTIVO</p>
+        <p className="brand-tag">{t("tagline")}</p>
+        <p className="nav-caption">{t("nav_crop_space")}</p>
         <nav aria-label="Navegación principal">
           {NAV.map(([id, label, Icon]) => (
             <button
@@ -770,33 +874,40 @@ export default function App({ initialState }) {
         <div className="sidebar-bottom">
           <div className="mission-note">
             <Satellite />
-            <strong>PILOTO · ALTO PARANÁ</strong>
+            <strong>{t("pilot_note")}</strong>
             <p>
-              Agricultura informada.
-              <br />
-              Tierra más resiliente.
+              {t("pilot_desc")
+                .split("\n")
+                .map((line, idx) => (
+                  <React.Fragment key={idx}>
+                    {line}
+                    <br />
+                  </React.Fragment>
+                ))}
             </p>
           </div>
           <p>
             <ShieldCheck size={13} />
-            Datos guardados en esta instalación
+            {t("data_saved")}
           </p>
         </div>
       </aside>
+
       {menu && (
         <button
           className="menu-scrim"
           onClick={() => setMenu(false)}
-          aria-label="Cerrar menú"
+          aria-label={t("close_menu")}
         />
       )}
+
       <div className="main-shell">
         <header className="topbar">
           <div className="breadcrumbs">
             <button
               className="icon-button mobile-menu"
               onClick={() => setMenu((x) => !x)}
-              aria-label="Abrir menú"
+              aria-label={t("open_menu")}
               aria-expanded={menu}
             >
               {menu ? <X /> : <Menu />}
@@ -811,18 +922,67 @@ export default function App({ initialState }) {
               className={`connection ${initialState.error ? "disconnected" : ""}`}
             >
               <i />
-              {initialState.error
-                ? "Servidor sin conexión"
-                : "Tu espacio de equipo"}
+              {initialState.error ? t("server_offline") : t("team_workspace")}
             </span>
-            <span className="lang-tag">ES</span>
-            <span className="avatar">AP</span>
+            <div className="lang-switcher">
+              <button
+                type="button"
+                className={`lang-btn ${lang === "es" ? "active" : ""}`}
+                onClick={() => handleLanguageChange("es")}
+                title="Español"
+              >
+                ES
+              </button>
+              <span className="lang-divider">/</span>
+              <button
+                type="button"
+                className={`lang-btn ${lang === "en" ? "active" : ""}`}
+                onClick={() => handleLanguageChange("en")}
+                title="English"
+              >
+                EN
+              </button>
+            </div>
+            <div className="avatar-dropdown-wrap" ref={dropdownRef}>
+              <button
+                type="button"
+                className={`avatar-button ${dropdownOpen ? "active" : ""}`}
+                onClick={() => setDropdownOpen((prev) => !prev)}
+                aria-label={t("user_menu")}
+                aria-expanded={dropdownOpen}
+              >
+                AP
+              </button>
+              {dropdownOpen && (
+                <div className="user-dropdown-menu">
+                  <div className="dropdown-user-header">
+                    <strong>{t("user_team")}</strong>
+                    <span>admin</span>
+                  </div>
+                  <div className="dropdown-divider" />
+                  <button
+                    type="button"
+                    className="dropdown-item"
+                    onClick={toggleDarkMode}
+                  >
+                    {darkMode ? <Sun size={15} /> : <Moon size={15} />}
+                    <span>{darkMode ? t("light_mode") : t("dark_mode")}</span>
+                  </button>
+                  <div className="dropdown-divider" />
+                  <a href="/logout" className="dropdown-item dropdown-logout">
+                    <LogOut size={15} />
+                    <span>{t("logout")}</span>
+                  </a>
+                </div>
+              )}
+            </div>
           </div>
         </header>
+
         <main className="main-content">
           <div className="page-top">
             <div>
-              <p className="eyebrow">PILOTO · ALTO PARANÁ, PARAGUAY</p>
+              <p className="eyebrow">{t("pilot_title")}</p>
               <h2>{NAV.find((x) => x[0] === view)?.[1]}</h2>
             </div>
             <button
@@ -831,13 +991,14 @@ export default function App({ initialState }) {
               onClick={() => openForm()}
             >
               <Plus />
-              Nueva parcela
+              {t("new_parcel")}
             </button>
           </div>
+
           {parcels.length > 0 && (
             <div className="active-plot-bar">
               <MapPin size={14} />
-              <label htmlFor="active-plot">Parcela activa</label>
+              <label htmlFor="active-plot">{t("active_parcel_label")}</label>
               <select
                 id="active-plot"
                 value={parcel?.id || ""}
@@ -849,35 +1010,44 @@ export default function App({ initialState }) {
                   </option>
                 ))}
               </select>
-              <span>{number(parcel?.area_ha, 2)} ha aprox.</span>
+              <span>
+                {number(parcel?.area_ha, 2, lang)} {t("approx_label")}
+              </span>
             </div>
           )}
+
           {error && (
             <div className="error mb-5" role="alert">
               <AlertTriangle size={18} />
               <span>{error}</span>
-              <button onClick={() => setError("")} aria-label="Cerrar aviso">
+              <button
+                onClick={() => setError("")}
+                aria-label={t("close_notice")}
+              >
                 <X size={16} />
               </button>
             </div>
           )}
+
           <div key={view} className="page-content">
             {content}
           </div>
+
           <footer className="footer">
             <span>
               AgroShift PY <i />
-              Agricultura informada, tierra resiliente.
+              {t("footer_text_1")}
             </span>
-            <p>Proyecto independiente · Datos NASA, decisiones explicadas.</p>
+            <p>{t("footer_text_2")}</p>
           </footer>
         </main>
       </div>
+
       {modal && (
         <PlotForm
           parcel={editing}
           crops={initialState.crops}
-          boundary={region.boundary}
+          boundary={region?.boundary}
           period={period}
           onClose={() => setModal(false)}
           onSaved={(p, n) => {
@@ -886,13 +1056,15 @@ export default function App({ initialState }) {
             setNotice(n);
             navigate("rotation");
           }}
+          lang={lang}
         />
       )}
+
       {notice && (
         <div className="toast" role="status">
           <Check size={17} />
           {notice}
-          <button onClick={() => setNotice("")} aria-label="Cerrar aviso">
+          <button onClick={() => setNotice("")} aria-label={t("close_notice")}>
             <X size={15} />
           </button>
         </div>

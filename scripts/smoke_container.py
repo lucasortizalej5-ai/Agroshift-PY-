@@ -57,7 +57,7 @@ def main():
                     raise AssertionError('No se exigió acceso protegido.')
                 except urllib.error.HTTPError as error:
                     assert error.code == 401
-                assert 'Una mejor decisión' in call('/')
+                assert 'A better decision' in call('/')
                 print('PASS: contenedor sin root, HTML SSR y acceso protegido.')
                 parcel = call('/api/parcels', 'POST', {'name': 'Parcela Docker temporal', 'latitude': -25.45,
                               'longitude': -54.92, 'radius_m': 200, 'previous_crop': 'soja'})

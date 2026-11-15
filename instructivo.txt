@@ -1,0 +1,114 @@
+================================================================================
+                    INSTRUCTIVO DE DESPLIEGUE - AGROSHIFT PY
+================================================================================
+
+Este proyecto está completamente dockerizado. Todo el entorno (Frontend React/Vite,
+Backend FastAPI/Python y Base de Datos SQLite) se compila y ejecuta de manera
+aislada dentro de contenedores.
+
+
+1. REQUISITO OBLIGATORIO PREVIO
+--------------------------------------------------------------------------------
+Es 100% OBLIGATORIO tener instalado y en ejecución DOCKER:
+
+  * En Windows / macOS:
+    Descargar e instalar Docker Desktop (https://www.docker.com/products/docker-desktop/).
+    Asegurarse de que el programa Docker Desktop esté abierto y con el ícono
+    verde de estado "Engine running".
+
+  * En Linux:
+    Tener instalados los paquetes 'docker' y el plugin 'docker-compose-plugin'.
+    (Servicio docker activo: sudo systemctl start docker).
+
+NOTA: NO necesitas tener instalado Node.js, npm ni Python en la computadora.
+Docker se encarga de compilar y descargar todas las dependencias internamente.
+
+
+2. ARCHIVOS NECESARIOS EN LA CARPETA
+--------------------------------------------------------------------------------
+Asegúrate de que la carpeta del proyecto contenga al menos:
+  - docker-compose.yml
+  - Dockerfile
+  - .env (debe contener WEB_USERNAME, WEB_PASSWORD y API_INTERNAL_TOKEN)
+  - Carpetas frontend/ y backend/
+
+
+3. PASOS PARA LEVANTAR EL PROYECTO
+--------------------------------------------------------------------------------
+Paso 1: Abrir una terminal (PowerShell, CMD, Git Bash o Terminal de Linux/Mac).
+
+Paso 2: Navegar hasta la carpeta del proyecto:
+        cd ruta/a/Agroshift-PY--main(2)
+
+Paso 3: Ejecutar el siguiente comando para compilar e iniciar el contenedor:
+
+        docker compose up -d --build
+
+        * La primera vez puede tardar varios minutos mientras descarga las imágenes
+          base y compila los componentes. Las siguientes veces iniciará en segundos.
+
+
+4. CÓMO ACCEDER A LA APLICACIÓN
+--------------------------------------------------------------------------------
+Una vez terminado el comando anterior, la aplicación estará disponible:
+
+  A) Desde la misma computadora:
+     http://localhost:8080/
+
+  B) Para generar un CÓDIGO QR o acceder desde celulares y otras PCs en la misma red Wi-Fi:
+     1. Para habilitar acceso por red local, configurá AGROSHIFT_HOST_IP=0.0.0.0
+        en tu .env y recreá el servicio. Por defecto solo escucha en localhost.
+     2. Averigua la IP local de tu PC:
+        - En Windows (CMD/PowerShell): ejecuta 'ipconfig' y busca la "Dirección IPv4"
+          (por ejemplo: 192.168.1.50).
+        - En Linux/Mac: ejecuta 'ip a' o 'ifconfig'.
+     3. El enlace para tu QR será:
+        http://<TU_IP_LOCAL>:8080/
+        (Ejemplo: http://192.168.1.50:8080/)
+
+
+5. CREDENCIALES DE INICIO DE SESIÓN E IDIOMA
+--------------------------------------------------------------------------------
+Al ingresar a la URL verás la pantalla de inicio de sesión:
+
+  * Usar WEB_USERNAME y WEB_PASSWORD configurados en tu archivo .env privado.
+  * El repositorio no incluye credenciales predeterminadas.
+
+  * Idioma predeterminado:
+    El sistema inicia por defecto en INGLÉS (EN).
+    Puedes cambiar a ESPAÑOL (ES) en cualquier momento desde el selector en el
+    navbar superior (o en la propia pantalla de login).
+
+  * Permisos de Ubicación / GPS:
+    Al abrir el formulario de parcela ("New parcel"), el navegador solicitará
+    permiso de ubicación para centrar automáticamente el mapa en tu posición
+    geográfica actual con alta precisión.
+
+
+6. COMANDOS ÚTILES DE ADMINISTRACIÓN
+--------------------------------------------------------------------------------
+Todos estos comandos se ejecutan en la terminal dentro de la carpeta del proyecto:
+
+  * Ver si el contenedor está corriendo y en qué puerto:
+    docker compose ps
+
+  * Ver los registros y errores en tiempo real:
+    docker compose logs -f
+
+  * Reiniciar el servicio:
+    docker compose restart
+
+  * Detener y apagar el proyecto:
+    docker compose down
+
+
+7. SOLUCIÓN DE PROBLEMAS COMUNES
+--------------------------------------------------------------------------------
+* Error: "docker: command not found" o "error connecting to docker daemon":
+  Solución: Verifica que Docker Desktop esté instalado, abierto y en ejecución.
+
+* Error: "port is already allocated" (puerto 8080 en uso):
+  Solución: Si otro programa usa el puerto 8080, edita el archivo .env y cambia:
+  AGROSHIFT_PORT=8081
+  Y luego levanta con: docker compose up -d
+================================================================================

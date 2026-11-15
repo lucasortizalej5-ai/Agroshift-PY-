@@ -56,7 +56,7 @@ Faltan variedad, ventanas locales validadas, historial sanitario, característic
 
 El archivo `alto-parana.geojson` se extrajo de [geoBoundaries PRY ADM1](https://www.geoboundaries.org/api/current/gbOpen/PRY/ADM1/). Fuente declarada: Dirección General de Estadística, Encuestas y Censos; año representado 2012; licencia **CC BY 4.0**. Usamos geometría simplificada. Comprobamos centro y 64 puntos de la circunferencia; es un control aproximado del piloto y puede no capturar detalles menores del límite.
 
-Mapa base: [OpenStreetMap contributors](https://www.openstreetmap.org/copyright). Los servicios públicos de teselas no ofrecen un SLA para una aplicación productiva; antes de escalar habrá que elegir un proveedor adecuado.
+Mapa base de la versión actualizada: Google Maps, a través de la capa Leaflet incluida en el ZIP. La atribución se muestra en el mapa. geoBoundaries sigue aportando el límite departamental. La información meteorológica continúa consultándose en NASA POWER.
 
 Fotografía ilustrativa: [Unsplash](https://unsplash.com/license), recurso `photo-1500382017468-9049fed747ef`. La imagen no identifica una parcela del usuario. El ícono de AgroShift se dibujó para este proyecto.
 

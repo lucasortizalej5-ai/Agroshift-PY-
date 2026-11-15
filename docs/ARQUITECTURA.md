@@ -10,7 +10,7 @@ flowchart LR
     N -->|API interna| F[FastAPI\nvalidaciones y reglas]
     F --> D[(SQLite local)]
     F --> P[NASA POWER Daily API]
-    U --> M[OpenStreetMap\nteselas del mapa]
+    U --> M[Google Maps\nteselas del mapa]
 ```
 
 El primer HTML contiene dashboard y parcelas obtenidos de SQLite. `hydrateRoot` agrega los eventos en el navegador. Leaflet se importa después de montar el componente: no intenta usar `window` durante SSR. El endpoint `/api/bootstrap` reúne la información inicial.
@@ -69,7 +69,7 @@ La primera versión usa `PRAGMA user_version = 1`. Las futuras modificaciones de
 
 ## Seguridad y alcance
 
-Desarrollo en localhost, sin acceso remoto. Producción exige autenticación HTTP Basic de equipo en el servidor SSR, bajo HTTPS del alojamiento, y token interno entre Node y FastAPI. El navegador no recibe ese token. Las escrituras de otro origen se rechazan. El backend no expone sus detalles de validación privados ni las notas en mensajes de error.
+Desarrollo en localhost, sin acceso remoto. Producción exige inicio de sesión de equipo con cookie firmada, HttpOnly y SameSite=Lax en el servidor SSR; las API también aceptan HTTP Basic, bajo HTTPS del alojamiento, y token interno entre Node y FastAPI. El navegador no recibe ese token. Las escrituras de otro origen se rechazan. El backend no expone sus detalles de validación privados ni las notas en mensajes de error.
 
 No hay multiusuario, roles por agricultor, recuperación de contraseña ni autorización por propietario. Es una instalación de equipo para demostración. Antes de compartirla entre productores hay que implementar esas capacidades.
 

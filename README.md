@@ -4,11 +4,19 @@
 
 Este proyecto contiene **React + Vite + Tailwind CSS, renderizado en servidor (SSR) mediante Node, FastAPI y SQLite**. No es únicamente una maqueta. El navegador se conecta al servidor SSR; ese servidor deriva las consultas a FastAPI, que guarda las parcelas y consulta NASA.
 
+## Actualización incorporada desde el ZIP
+
+Se compararon ambas carpetas del paquete recibido. `Agroshift-PY--main` coincidía con GitHub; se integraron los cambios de `Agroshift-PY--main(2)`. Incluyen inicio de sesión web con cookies, salida de sesión, interfaz ES/EN (inglés inicial), modo oscuro, mapa actualizado y arranque local con `INICIAR AGROSHIFT.bat`.
+
+El `.env` privado y las credenciales incluidas en el instructivo no forman parte del repositorio. Configurá tus propios valores. `compose.yaml` y `docker-compose.yml` son equivalentes; por defecto escuchan en localhost. Para acceso por red local configurá `AGROSHIFT_HOST_IP=0.0.0.0` y usá la IP real de tu computadora desde otros dispositivos. El GPS del navegador puede requerir HTTPS fuera de localhost.
+
+Para iniciar sin Docker en Windows podés abrir `INICIAR AGROSHIFT.bat`: instala las dependencias la primera vez y abre las dos ventanas. Respeta `API_BASE_URL` y `PORT` del `.env`. El lanzador debe ejecutarse en Windows; no se verificó interactivamente en este entorno Linux.
+
 ## Qué está implementado en esta primera etapa
 
-- Dashboard adaptable a celulares y computadoras, en español.
+- Dashboard adaptable a celulares y computadoras, en español e inglés, con selector de idioma y modo oscuro.
 - Registro, edición, selección y eliminación de varias parcelas.
-- Leaflet y OpenStreetMap: selección por mapa, GPS, coordenadas y radio de 50 a 2.000 metros.
+- Leaflet y Google Maps: selección por mapa, GPS, coordenadas y radio de 50 a 2.000 metros.
 - Validación del centro y del contorno circular dentro del límite aproximado de Alto Paraná.
 - Cultivo anterior: soja, maíz, trigo, mandioca y poroto.
 - Observaciones de textura, drenaje, pH medido y fecha del análisis. Se guardan sin convertirlas en diagnósticos.
@@ -83,7 +91,7 @@ En otra terminal: `npm --prefix frontend ci` y `npm --prefix frontend run dev`.
 
 1. Abrí el dashboard. Inicialmente no hay parcelas ni mediciones inventadas.
 2. Presioná **Nueva parcela**.
-3. Seleccioná un punto dentro de Alto Paraná. El punto inicial del mapa es una **referencia en Minga Guazú**, no la ubicación automática del usuario. El GPS se solicita solo si presionás el botón correspondiente.
+3. Seleccioná un punto dentro de Alto Paraná. El punto inicial del mapa es una **referencia en Minga Guazú**, no la ubicación automática del usuario. Al registrar una parcela nueva se solicita el GPS; también podés elegir el punto manualmente. Al editar una parcela, su ubicación se conserva hasta que la cambies.
 4. Elegí el radio, nombrá la parcela e indicá el cultivo anterior. Por ejemplo, soja.
 5. Si tenés un pH medido, agregá su valor y fecha. Si no, dejalo vacío.
 6. Presioná **Guardar y consultar NASA**. Se guarda primero la parcela y luego se consulta el último período predeterminado de 30 días, finalizado hace 7 días.

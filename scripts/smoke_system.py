@@ -56,7 +56,7 @@ def main():
                         raise RuntimeError('Los servidores no iniciaron. Revisá las dependencias.')
                     time.sleep(.2)
             html = call(origin)
-            assert 'Una mejor decisión' in html and '<!--app-html-->' not in html
+            assert ('Una mejor decisión' in html or 'A better decision' in html) and '<!--app-html-->' not in html
             print('PASS: HTML SSR con contenido real antes de JavaScript.')
             plot = call(origin + '/api/parcels', 'POST', {'name': 'Parcela SSR verificada', 'latitude': -25.45,
                         'longitude': -54.92, 'radius_m': 200, 'previous_crop': 'soja'})

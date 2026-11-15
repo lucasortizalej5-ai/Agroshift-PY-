@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import Map from "./Map.jsx";
 import { request, number } from "../api.js";
+import { translations, translateCropName } from "../i18n.js";
 
 const initial = {
   name: "",
@@ -23,14 +24,19 @@ const initial = {
   soil_test_date: "",
   notes: "",
 };
+
 export default function PlotForm({
   parcel,
-  crops,
+  crops = [],
   boundary,
   period,
   onClose,
   onSaved,
+  lang = "en",
 }) {
+  const t = (k) =>
+    translations[lang]?.[k] || translations.en[k] || translations.es[k] || k;
+
   const [form, setForm] = useState(() => ({
     ...initial,
     ...Object.fromEntries(
@@ -47,6 +53,7 @@ export default function PlotForm({
   const modal = useRef(null),
     first = useRef(null),
     active = useRef(true);
+
   const update = (key, value) => setForm((f) => ({ ...f, [key]: value }));
   const setLocation = (latitude, longitude) => {
     latitude = Number(latitude.toFixed(6));
@@ -54,16 +61,45 @@ export default function PlotForm({
     setForm((f) => ({ ...f, latitude, longitude }));
     setCoordinate({ latitude, longitude });
   };
+
+  function locate(isManual = false) {
+    if (typeof navigator === "undefined" || !navigator.geolocation) {
+      if (isManual) setError(t("gps_not_supported"));
+      return;
+    }
+    setGps(true);
+    navigator.geolocation.getCurrentPosition(
+      (p) => {
+        if (!active.current) return;
+        setGps(false);
+        setLocation(p.coords.latitude, p.coords.longitude);
+      },
+      () => {
+        if (!active.current) return;
+        setGps(false);
+        if (isManual) {
+          setError(t("gps_failed"));
+        }
+      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 },
+    );
+  }
+
   useEffect(() => {
     const previous = document.activeElement;
     document.body.style.overflow = "hidden";
     first.current?.focus();
+
+    // Auto-request location permission when modal opens
+    if (!parcel) locate(false);
+
     return () => {
       active.current = false;
       document.body.style.overflow = "";
       previous?.focus?.();
     };
   }, []);
+
   function keydown(e) {
     if (e.key === "Escape" && !busy) onClose();
     if (e.key === "Tab") {
@@ -81,28 +117,7 @@ export default function PlotForm({
       }
     }
   }
-  function locate() {
-    if (!navigator.geolocation) {
-      setError("Este dispositivo no ofrece GPS. Elegí un punto en el mapa.");
-      return;
-    }
-    setGps(true);
-    navigator.geolocation.getCurrentPosition(
-      (p) => {
-        if (!active.current) return;
-        setGps(false);
-        setLocation(p.coords.latitude, p.coords.longitude);
-      },
-      () => {
-        if (!active.current) return;
-        setGps(false);
-        setError(
-          "No pudimos obtener tu ubicación. Revisá los permisos o elegí un punto en el mapa.",
-        );
-      },
-      { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 },
-    );
-  }
+
   async function save(e) {
     e.preventDefault();
     if (busy) return;
@@ -126,17 +141,18 @@ export default function PlotForm({
       setBusy(false);
       return;
     }
-    let notice = "Parcela guardada y datos NASA consultados.";
+    let notice = t("parcel_saved_notice");
     try {
       saved = await request(`/api/parcels/${saved.id}/analyze`, {
         method: "POST",
         body: JSON.stringify(period),
       });
     } catch (e) {
-      notice = "La parcela quedó guardada. " + e.message;
+      notice = t("parcel_saved_partial") + e.message;
     }
     onSaved(saved, notice);
   }
+
   return (
     <div className="modal-overlay" onKeyDown={keydown}>
       <form
@@ -149,11 +165,9 @@ export default function PlotForm({
       >
         <header className="modal-head">
           <div>
-            <p className="eyebrow">PILOTO · ALTO PARANÁ</p>
+            <p className="eyebrow">{t("form_eyebrow")}</p>
             <h2 id="plot-title">
-              {parcel
-                ? "Editar parcela"
-                : "Una nueva parcela, un nuevo comienzo."}
+              {parcel ? t("form_edit_title") : t("form_new_title")}
             </h2>
           </div>
           <button
@@ -161,7 +175,7 @@ export default function PlotForm({
             className="icon-button"
             onClick={onClose}
             disabled={busy}
-            aria-label="Cerrar"
+            aria-label={t("close_btn")}
           >
             <X />
           </button>
@@ -170,7 +184,7 @@ export default function PlotForm({
           <section className="form-data">
             <h3>
               <Leaf size={17} />
-              Tu cultivo y tu suelo
+              {t("crop_and_soil_section")}
             </h3>
             {error && (
               <div className="error" role="alert">
@@ -178,62 +192,60 @@ export default function PlotForm({
               </div>
             )}
             <label className="field">
-              Nombre de la parcela
+              {t("parcel_name_label")}
               <input
                 ref={first}
                 required
                 maxLength={80}
-                placeholder="Ej. Lote norte"
+                placeholder={t("parcel_name_placeholder")}
                 value={form.name}
                 onChange={(e) => update("name", e.target.value)}
               />
             </label>
             <label className="field">
-              Cultivo anterior
+              {t("previous_crop_label")}
               <select
                 value={form.previous_crop}
                 onChange={(e) => update("previous_crop", e.target.value)}
               >
-                <option value="">No lo sé / sin registro</option>
+                <option value="">{t("no_previous_crop_option")}</option>
                 {crops.map((c) => (
                   <option value={c.id} key={c.id}>
-                    {c.name}
+                    {translateCropName(c.name, lang)}
                   </option>
                 ))}
               </select>
-              <small>
-                Este historial permite aplicar las reglas de diversificación.
-              </small>
+              <small>{t("previous_crop_small")}</small>
             </label>
             <div className="two-fields">
               <label className="field">
-                Textura observada
+                {t("texture_label")}
                 <select
                   value={form.soil_texture}
                   onChange={(e) => update("soil_texture", e.target.value)}
                 >
-                  <option value="desconocida">No lo sé</option>
-                  <option value="arcillosa">Arcillosa</option>
-                  <option value="franca">Franca</option>
-                  <option value="arenosa">Arenosa</option>
+                  <option value="desconocida">{t("texture_unknown")}</option>
+                  <option value="arcillosa">{t("texture_clay")}</option>
+                  <option value="franca">{t("texture_loam")}</option>
+                  <option value="arenosa">{t("texture_sandy")}</option>
                 </select>
               </label>
               <label className="field">
-                Drenaje observado
+                {t("drainage_label")}
                 <select
                   value={form.drainage}
                   onChange={(e) => update("drainage", e.target.value)}
                 >
-                  <option value="desconocido">No lo sé</option>
-                  <option value="bueno">Bueno</option>
-                  <option value="intermedio">Intermedio</option>
-                  <option value="lento">Lento / se encharca</option>
+                  <option value="desconocido">{t("drainage_unknown")}</option>
+                  <option value="bueno">{t("drainage_good")}</option>
+                  <option value="intermedio">{t("drainage_moderate")}</option>
+                  <option value="lento">{t("drainage_slow")}</option>
                 </select>
               </label>
             </div>
             <div className="two-fields">
               <label className="field">
-                pH medido (opcional)
+                {t("ph_label")}
                 <input
                   type="number"
                   min={3}
@@ -241,12 +253,12 @@ export default function PlotForm({
                   step="0.1"
                   inputMode="decimal"
                   value={form.soil_ph}
-                  placeholder="Sin análisis"
+                  placeholder={t("ph_placeholder")}
                   onChange={(e) => update("soil_ph", e.target.value)}
                 />
               </label>
               <label className="field">
-                Fecha del análisis
+                {t("test_date_label")}
                 <input
                   type="date"
                   required={form.soil_ph !== ""}
@@ -258,15 +270,14 @@ export default function PlotForm({
             </div>
             <p className="form-note">
               <Info size={14} />
-              El pH no determina los nutrientes. No calculamos dosis de
-              fertilizante.
+              {t("ph_form_note")}
             </p>
             <label className="field">
-              Observaciones (opcional)
+              {t("notes_label")}
               <textarea
                 maxLength={1000}
                 rows={2}
-                placeholder="Lo que conocés de tu terreno…"
+                placeholder={t("notes_placeholder")}
                 value={form.notes}
                 onChange={(e) => update("notes", e.target.value)}
               />
@@ -275,31 +286,29 @@ export default function PlotForm({
           <section className="form-location">
             <h3>
               <MapPin size={17} />
-              Elegí el lugar que querés cultivar
+              {t("choose_location_section")}
             </h3>
-            <p className="muted small">
-              Tocá el mapa, mové el punto o utilizá el GPS. El piloto admite
-              parcelas dentro de Alto Paraná.
-            </p>
+            <p className="muted small">{t("location_guide")}</p>
             <Map
               latitude={form.latitude}
               longitude={form.longitude}
               radius={form.radius_m}
               boundary={boundary}
               onChange={setLocation}
+              lang={lang}
             />
             <button
               type="button"
               className="button button-soft gps-button"
-              onClick={locate}
+              onClick={() => locate(true)}
               disabled={gps || busy}
             >
               {gps ? <LoaderCircle className="spin" /> : <LocateFixed />}
-              {gps ? "Buscando ubicación…" : "Usar mi ubicación"}
+              {gps ? t("finding_gps") : t("use_gps_btn")}
             </button>
             <div className="two-fields">
               <label className="field">
-                Latitud
+                {t("latitude_label")}
                 <input
                   type="number"
                   step="any"
@@ -312,7 +321,7 @@ export default function PlotForm({
                 />
               </label>
               <label className="field">
-                Longitud
+                {t("longitude_label")}
                 <input
                   type="number"
                   step="any"
@@ -338,13 +347,13 @@ export default function PlotForm({
                   Math.abs(lon) <= 180
                 )
                   setLocation(lat, lon);
-                else setError("Revisá las coordenadas.");
+                else setError(t("invalid_coords_error"));
               }}
             >
-              Ubicar estas coordenadas →
+              {t("locate_coords_btn")}
             </button>
             <label className="field radius-field">
-              Radio de aprovechamiento
+              {t("radius_label")}
               <input
                 type="range"
                 min={50}
@@ -354,23 +363,20 @@ export default function PlotForm({
                 onChange={(e) => update("radius_m", Number(e.target.value))}
               />
               <span className="radius-values">
-                <span>{number(form.radius_m, 0)} m de radio</span>
+                <span>
+                  {number(form.radius_m, 0, lang)} {t("radius_unit")}
+                </span>
                 <strong>
-                  {number((Math.PI * form.radius_m ** 2) / 10000, 2)} ha aprox.
+                  {number((Math.PI * form.radius_m ** 2) / 10000, 2, lang)}{" "}
+                  {t("approx_label")}
                 </strong>
               </span>
-              <small>
-                Área circular de referencia, no catastral. NASA consulta el
-                punto central; el radio no aumenta su resolución.
-              </small>
+              <small>{t("radius_small")}</small>
             </label>
           </section>
         </div>
         <footer className="modal-footer">
-          <p>
-            Las parcelas se guardan en SQLite. NASA recibe las coordenadas
-            consultadas; OpenStreetMap recibe las solicitudes del mapa.
-          </p>
+          <p>{t("modal_footer_note")}</p>
           <div>
             <button
               type="button"
@@ -378,11 +384,11 @@ export default function PlotForm({
               disabled={busy}
               onClick={onClose}
             >
-              Cancelar
+              {t("cancel_btn")}
             </button>
             <button className="button button-green" disabled={busy}>
               {busy ? <LoaderCircle className="spin" /> : <Check />}
-              {busy ? "Guardando y consultando…" : "Guardar y consultar NASA"}
+              {busy ? t("saving_and_querying") : t("save_and_query_btn")}
             </button>
           </div>
         </footer>

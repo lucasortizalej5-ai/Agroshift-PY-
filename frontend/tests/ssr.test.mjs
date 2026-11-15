@@ -1,10 +1,18 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { serializeState, hasBasicAccess } from "../ssr-utils.mjs";
+import {
+  serializeState,
+  hasBasicAccess,
+  parseCookies,
+  createSessionToken,
+  verifySession,
+} from "../ssr-utils.mjs";
+import { createHmac } from "node:crypto";
 import { render } from "../dist/server/entry-server.js";
 
 test("SSR delivers actual dashboard content before JavaScript", () => {
   const html = render({
+    initialLang: "es",
     parcels: [],
     crops: [],
     region: { name: "Alto Paraná", boundary: null },
@@ -35,7 +43,45 @@ test("private deployment requires matching Basic credentials", () => {
   );
 });
 test("SSR backend failure renders an actionable page", () => {
-  const html = render({ parcels: [], error: "El backend no está disponible." });
+  const html = render({
+    initialLang: "es",
+    parcels: [],
+    error: "El backend no está disponible.",
+  });
   assert.match(html, /Necesitamos conectar el servidor/);
   assert.match(html, /Reintentar/);
+});
+
+test("SSR also supports the uploaded English interface", () => {
+  const html = render({
+    initialLang: "en",
+    parcels: [],
+    crops: [],
+    region: null,
+  });
+  assert.match(html, /A better decision/);
+  assert.match(html, /New parcel/);
+});
+
+test("session signature binds the user, secret and expiration", () => {
+  const secret = "synthetic-test-only-secret";
+  const token = createSessionToken("grower", secret);
+  assert.equal(verifySession(token, "grower", secret), true);
+  assert.equal(verifySession(token, "other", secret), false);
+  assert.equal(verifySession(token, "grower", "other"), false);
+  for (const time of [Date.now() - 31 * 86400000, Date.now() + 86400000]) {
+    const signature = createHmac("sha256", secret)
+      .update(`${time}:grower`)
+      .digest("hex");
+    assert.equal(
+      verifySession(`${time}.${signature}`, "grower", secret),
+      false,
+    );
+  }
+});
+
+test("malformed cookies cannot crash the server", () => {
+  assert.deepEqual(parseCookies("broken=%ZZ; agroshift_lang=es"), {
+    agroshift_lang: "es",
+  });
 });

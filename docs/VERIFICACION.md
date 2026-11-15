@@ -40,3 +40,9 @@ Estos son resúmenes de un período pasado, no un pronóstico ni mediciones de s
 Python 3.12.14; Node 24.22.1 para comprobaciones locales; Node 22 para la compilación del contenedor. `frontend/package-lock.json` fija las dependencias JavaScript. `backend/requirements-tested.txt` registra las versiones Python usadas, además de los requisitos de instalación del proyecto.
 
 El paquete de código excluye `.env`, bases SQLite, cachés, dependencias instaladas y credenciales.
+
+## Revisión del ZIP actualizado
+
+La carpeta `(2)` aporta login con sesión firmada, idiomas ES/EN, modo oscuro, mapa y lanzador de Windows. Se excluyó `.env` y se retiraron credenciales del instructivo. Se agregó verificación del login real por HTTP, acceso por cookie, logout, rechazo de orígenes externos y vencimiento de sesiones. El lanzador `.bat` se revisó estáticamente, sin ejecución en Windows. Los archivos Compose se normalizaron para conservar un único comportamiento por defecto.
+
+Revisión de integración del 15 de noviembre de 2026: 39 pruebas Python, 8 pruebas Node (incluido login HTTP real) y 4 pruebas Compose aprobadas. Compilación cliente/SSR y prueba integral SSR–FastAPI–SQLite aprobadas. No se repitió la consulta NASA externa porque el backend y el conector no cambiaron.

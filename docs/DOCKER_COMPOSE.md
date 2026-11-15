@@ -48,7 +48,7 @@ La primera vez instala y compila las dependencias. Luego abrí:
 
 **http://localhost:8080**
 
-El navegador pedirá el usuario y contraseña definidos en tu `.env`. No necesitás iniciar Python y Node en dos ventanas cuando usás Compose: ambos están dentro de un único contenedor.
+La página de inicio de sesión pedirá el usuario y contraseña definidos en tu `.env`. No necesitás iniciar Python y Node en dos ventanas cuando usás Compose: ambos están dentro de un único contenedor.
 
 Si cambiaste credenciales en `.env`, aplicalas con:
 
@@ -94,3 +94,7 @@ docker compose down
 No agregues `-v`: esa opción elimina el volumen y las parcelas. El volumen se inicializa vacío la primera vez; Compose no importa automáticamente una base de datos que hayas usado antes en Windows o en otro contenedor. Este volumen local no resuelve la persistencia de Cloud Run.
 
 El puerto se publica solo en la computadora local. El acceso desde otros equipos y el despliegue remoto se deben configurar por separado.
+
+## Archivos Compose equivalentes y red local
+
+`compose.yaml` y `docker-compose.yml` contienen la misma configuración, para que el arranque automático y `docker compose -f docker-compose.yml` funcionen igual. Se mantiene el volumen y el nombre de proyecto existentes. `AGROSHIFT_HOST_IP` permite elegir la interfaz; su valor predeterminado es `127.0.0.1`. Para red local usá `0.0.0.0` y abrí la IP de la computadora anfitriona desde los demás dispositivos. El navegador puede requerir HTTPS para habilitar GPS desde otro dispositivo.
